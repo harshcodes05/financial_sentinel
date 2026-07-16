@@ -117,7 +117,7 @@ financial_sentinel/
 Clone the repository:
 
 ```bash
-git clone https://github.com/<your-username>/financial_sentinel.git
+git clone https://github.com/harshcodes05/financial_sentinel.git
 ```
 
 Move into the project directory:
@@ -126,11 +126,6 @@ Move into the project directory:
 cd financial_sentinel
 ```
 
-Install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
 
 Download the dataset from Kaggle and place it inside:
 
@@ -143,6 +138,30 @@ Run the Streamlit application:
 
 ```bash
 streamlit run app.py
+```
+
+Create and activate a virtual environment (recommended):
+
+```bash
+python -m venv venv
+```
+
+Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+Linux/macOS:
+
+```bash
+source venv/bin/activate
+```
+
+Install the required packages:
+
+```bash
+pip install -r requirements.txt
 ```
 
 ---

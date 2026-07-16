@@ -52,17 +52,9 @@ st.sidebar.markdown("""
 - **Algorithm:** Random Forest
 - **Preprocessing:** StandardScaler
 - **Class Imbalance:** SMOTE
-- **Features:** 30
-""")
-st.sidebar.markdown(
-    "- **Target:** Binary Classification"
+- **Target:** Binary Classification"""
 )
 
-st.sidebar.divider()
-
-st.sidebar.info(
-    "This application is intended for demonstration and educational purposes."
-)
 
 # Main Page
 
