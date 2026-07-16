@@ -1,6 +1,23 @@
+# Virtual Environment
 venv/
-data/
-.ipynb_checkpoints/
+.venv/
+
+# Python
 __pycache__/
 *.py[cod]
-.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dataset
+data/
+
+# Model checkpoints
+*.log
