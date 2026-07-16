@@ -137,7 +137,7 @@ data/
 Run the Streamlit application:
 
 ```bash
-streamlit run app.py
+https://financialsentinel-jhmuxkenwhtnototztp3ah.streamlit.app/
 ```
 
 Create and activate a virtual environment (recommended):
