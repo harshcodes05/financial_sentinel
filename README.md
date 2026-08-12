@@ -121,20 +121,42 @@ financial_sentinel/
 
 Financial Sentinel uses two complementary models:
 
-1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate $P(\text{Fraud} \mid X)$. Output probabilities are evaluated against an optimized decision threshold $\theta^*$ loaded from `models/v2/metadata.json`.
-2. **Unsupervised Isolation Forest:** Trained exclusively on legitimate transactions ($y=0$) to establish a normal purchasing baseline ($P(X \mid Y=0)$). Flags structural feature outliers exceeding a $0.5\%$ contamination threshold ($s(x, n) < 0$).
+1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate $P(\mathrm{Fraud} \mid X)$. Output probabilities are evaluated against an optimized decision threshold $\theta^*$ loaded from `models/v2/metadata.json`.
+
+2. **Unsupervised Isolation Forest:** Trained exclusively on legitimate transactions ($y = 0$) to establish a baseline of normal transaction behavior. It flags structural feature outliers based on the anomaly decision boundary determined during training with a $0.5\%$ contamination setting.
 
 ### Handling Class Imbalance
-Credit card fraud datasets are heavily skewed. Rather than generating synthetic data (SMOTE), the active XGBoost model uses cost weighting:
-$$\text{scale\_pos\_weight} = \frac{N_{\text{legit}}}{N_{\text{fraud}}} \approx 577.88$$
-This penalizes False Negatives $577.88\times$ more heavily directly inside XGBoost's log-loss gradient without distorting empirical joint distributions.
+
+Credit card fraud datasets are heavily skewed. Rather than generating synthetic samples using SMOTE, the active XGBoost model uses cost weighting:
+
+$$
+\mathrm{scale\_pos\_weight}
+=
+\frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}}
+\approx 577.88
+$$
+
+This assigns substantially greater training weight to fraudulent examples, increasing their contribution to XGBoost's gradient and helping the classifier focus on the minority class without synthetically altering the training distribution.
 
 ### $F_2$-Based Decision Threshold
-The default $0.50$ decision threshold is mathematically suboptimal for skewed distributions. Because uncaught fraud carries higher operational impact than false alerts, we optimize the $F_2$ metric:
-$$F_2 = 5 \cdot \frac{\text{Precision} \times \text{Recall}}{4 \cdot \text{Precision} + \text{Recall}}$$
+
+The default $0.50$ decision threshold is not necessarily optimal for a highly imbalanced fraud detection problem. Because fraud detection prioritizes recall when missed fraud carries greater operational impact than false alerts, the project optimizes the $F_2$ metric:
+
+$$
+F_2
+=
+5 \cdot
+\frac{\mathrm{Precision} \times \mathrm{Recall}}
+{4 \cdot \mathrm{Precision} + \mathrm{Recall}}
+$$
+
 Evaluating the Precision-Recall curve yields an optimal decision threshold:
-$$\theta^* = 0.8854$$
-which is stored in `models/v2/metadata.json` and loaded dynamically during inference.
+
+$$
+\theta^* = 0.8854
+$$
+
+The threshold is stored in `models/v2/metadata.json` and loaded dynamically during inference.
 
 ---
 
