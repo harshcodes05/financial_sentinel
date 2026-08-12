@@ -12,13 +12,13 @@ API_URL = os.getenv(
 )
 
 st.set_page_config(
-    page_title="Financial Sentinel | Enterprise Fraud Guard",
+    page_title="Financial Sentinel | Fraud Guard",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling for Enterprise Aesthetic
+# Custom Styling
 st.markdown("""
 <style>
     .main-header {
@@ -48,7 +48,7 @@ st.markdown("""
 
 # App Title Header
 st.markdown('<div class="main-header">🛡️ Financial Sentinel</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Enterprise Credit Card Fraud Detection & Dual-Engine Risk Platform</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Credit Card Fraud Detection & Risk Analysis Platform</div>', unsafe_allow_html=True)
 
 # Sidebar System Health & Controls
 st.sidebar.image("https://img.icons8.com/color/96/000000/shield-with-authorization-providers.png", width=70)

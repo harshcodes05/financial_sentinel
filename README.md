@@ -1,6 +1,6 @@
-# 🛡️ Financial Sentinel: Enterprise Credit Card Fraud Detection Microservice
+# 🛡️ Financial Sentinel: Credit Card Fraud Detection Microservice
 
-An end-to-end, production-grade machine learning microservice for detecting credit card fraud in real-time. Built with **FastAPI**, **Pydantic v2**, **XGBoost v2**, **Isolation Forest**, **Streamlit**, **Pytest**, and **Docker**.
+An end-to-end machine learning microservice for detecting credit card fraud in real-time. Built with **FastAPI**, **Pydantic v2**, **XGBoost v2**, **Isolation Forest**, **Streamlit**, **Pytest**, and **Docker**.
 
 ---
 
@@ -24,7 +24,7 @@ financial_sentinel/
 │   │   └── logger.py           # Structured logging engine
 │   └── config.py               # Pydantic-Settings & CORS configuration
 ├── apps/
-│   └── streamlit_app.py        # Enterprise UI Dashboard (Presets, Live latency, CSV batch)
+│   └── streamlit_app.py        # Streamlit UI Dashboard (Presets, Live latency, CSV batch)
 ├── scripts/
 │   ├── train_v2.py             # XGBoost + Isolation Forest model training script
 │   └── benchmark_latency.py    # Empirical p50, p95, p99 latency benchmarking script
@@ -47,19 +47,6 @@ financial_sentinel/
 ├── pytest.ini                  # Pytest environment & path configuration
 └── requirements.txt            # Python dependencies
 ```
-
----
-
-## ⚡ Dual-Model Risk Consensus Logic
-
-The inference engine combines supervised XGBoost ($p \ge \theta^* = 0.8854$) and unsupervised Isolation Forest (`is_anomaly`) outputs to determine the final risk consensus decision:
-
-| Supervised XGBoost | Unsupervised Isolation Forest | Consensus Flag (`consensus_flag`) | Risk Level (`risk_level`) | Operational Action |
-| :---: | :---: | :---: | :---: | :--- |
-| **Fraud ($1$)** | **Anomaly (`True`)** | `CONFIRMED_FRAUD` | **HIGH** | Immediate transaction block & priority fraud alert. |
-| **Fraud ($1$)** | Normal (`False`) | `SUPERVISED_FRAUD_FLAG` | **HIGH / MEDIUM** | Known fraud pattern match; queue for analyst review. |
-| Normal ($0$) | **Anomaly (`True`)** | `ANOMALY_ALERT` | **MEDIUM** | Zero-day behavioral anomaly; soft block / step-up auth. |
-| Normal ($0$) | Normal (`False`) | `CLEAN` | **LOW** | Standard purchasing pattern; instant transaction approval. |
 
 ---
 
@@ -213,7 +200,7 @@ python -m src.api.main
 # OpenAPI Docs: http://127.0.0.1:8000/docs
 ```
 
-### 5. Start Enterprise Streamlit Dashboard
+### 5. Start Streamlit Dashboard
 ```bash
 streamlit run apps/streamlit_app.py
 # UI opens on http://localhost:8501
