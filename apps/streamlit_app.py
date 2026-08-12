@@ -1,10 +1,15 @@
+import os
 import streamlit as st
 import requests
 import pandas as pd
 import time
 from pathlib import Path
 
-API_URL = "http://127.0.0.1:8000/api/v1"
+# Configurable API backend URL with environment variable override
+API_URL = os.getenv(
+    "FINANCIAL_SENTINEL_API_URL",
+    "http://127.0.0.1:8000/api/v1"
+)
 
 st.set_page_config(
     page_title="Financial Sentinel | Enterprise Fraud Guard",
@@ -65,9 +70,10 @@ except Exception:
     st.sidebar.error("🔴 API Backend: Offline (Start `python -m src.api.main`)")
 
 st.sidebar.divider()
-st.sidebar.markdown("""
+st.sidebar.markdown(f"""
 **System Specs:**
 - **Inference Engine:** FastAPI v2.0
+- **Backend Endpoint:** `{API_URL}`
 - **Model Stack:** XGBoost v2 + Isolation Forest
 - **Optimization:** F2-Tuned Decision Threshold
 - **Validation:** Pydantic Strict Schema
