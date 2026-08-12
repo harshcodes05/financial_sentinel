@@ -72,19 +72,19 @@ The application supports two primary environment modes configured in `src/config
 Alongside supervised XGBoost, the microservice integrates an unsupervised **Isolation Forest** anomaly detector.
 
 ### 1. 🎯 Why Isolation Forest Exists
-Supervised models (XGBoost) excel at matching historical fraud patterns ($y=1$). However, fraudsters constantly design novel evasion strategies (zero-day fraud attacks, unmapped geo-hop patterns). Isolation Forest serves as an **unsupervised zero-day safety net**, isolating abnormal transaction structures that deviate from regular purchasing behaviors even if supervised models assign a low probability.
+Supervised models (XGBoost) excel at matching historical fraud patterns ($y=1$). However, they may miss out-of-distribution transactions. Isolation Forest serves as an **unsupervised anomaly detector**, isolating structural feature outliers that deviate from regular purchasing behaviors even if supervised models assign a low probability.
 
 ### 2. 🎛️ What `contamination` Means (`contamination=0.005`)
-The `contamination` parameter defines the expected proportion of outliers (anomalies) in the feature space ($0.5\%$). It sets the internal decision boundary $s_0$ for binary classification (`predict(X)` $\rightarrow$ `+1` for normal baseline, `-1` for anomaly). A conservative $0.5\%$ contamination rate ensures high-confidence anomaly flags without inflating false positive alerts.
+The `contamination` parameter defines the expected proportion of outliers (anomalies) in the feature space ($0.5\%$). Setting contamination to $0.5\%$ configures the internal decision threshold $s_0$ to flag the top $0.5\%$ most isolated points in the training feature space (`predict(X)` $\rightarrow$ `+1` for baseline, `-1` for anomaly).
 
 ### 3. 📉 What `decision_function()` Represents
 The `decision_function(X)` computes the average isolation depth $s(x, n)$ of a transaction across all random partition trees:
 $$s(x, n) = 2^{-\frac{E(h(x))}{c(n)}}$$
-* **Negative Scores ($< 0$):** Sample is isolated near tree roots in very few partition splits $\rightarrow$ **High Anomaly Alert**.
+* **Negative Scores ($< 0$):** Sample is isolated near tree roots in very few partition splits $\rightarrow$ **Anomaly Alert**.
 * **Positive Scores ($> 0$):** Sample requires deep tree partitioning to isolate $\rightarrow$ **Standard Baseline Purchase**.
 
 ### 4. 🛡️ Why Train Exclusively on Legitimate Transactions (`y_train == 0`)
-Training Isolation Forest exclusively on verified legitimate transactions establishes a pure mathematical distribution of normal human financial behavior ($P(X \mid Y=0)$). If trained on noisy mixed data, isolation trees would treat historical fraud as part of the normal feature structure. Training on clean data guarantees that **any structural deviation** from normal purchasing behavior triggers an immediate anomaly flag.
+Training Isolation Forest exclusively on verified legitimate transactions establishes a pure mathematical distribution of normal human financial behavior ($P(X \mid Y=0)$). If trained on noisy mixed data, isolation trees would treat historical fraud as part of the normal feature structure. Training on clean data guarantees that **any structural deviation** from normal purchasing behavior triggers an anomaly flag.
 
 ---
 
@@ -115,7 +115,7 @@ The machine learning pipeline evolved through three major iterations:
 ### 5. 🎯 Why $F_2$ Score Optimization
 * **Role:** Asymmetric evaluation metric weighting Recall higher than Precision ($\beta = 2.0$):
   $$F_2 = (1 + 2^2) \frac{\text{Precision} \times \text{Recall}}{(2^2 \times \text{Precision}) + \text{Recall}} = 5 \cdot \frac{\text{Precision} \times \text{Recall}}{4 \cdot \text{Precision} + \text{Recall}}$$
-* **Rationale:** In financial fraud prevention, an uncaught fraudulent transaction (False Negative) results in direct chargeback losses and regulatory fines ($1,000+), whereas a false alert (False Positive) only costs a minor review fee ($<1). $F_2$ explicitly prioritizes catching fraud over precision.
+* **Rationale:** In financial risk modeling, False Negatives (uncaught fraud) typically carry higher operational impact than False Positives (flagged transactions). The $F_2$ metric explicitly weights Recall twice as heavily as Precision to prioritize fraud detection coverage over precision under class imbalance.
 
 ### 6. 🎛️ Why Threshold Tuning
 * **Role:** Decision boundary adjustment ($p \ge \theta^*$) instead of arbitrary default $0.50$.
