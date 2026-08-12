@@ -71,7 +71,7 @@ except Exception:
 st.sidebar.divider()
 st.sidebar.markdown(f"""
 **System Specs:**
-- **Inference Engine:** FastAPI v2.0
+- **Inference Engine:** FastAPI
 - **Backend Endpoint:** `{API_URL}`
 - **Model Stack:** XGBoost + Isolation Forest
 - **Optimization:** F2-Tuned Decision Threshold
@@ -175,33 +175,48 @@ with tab1:
                 st.divider()
                 st.subheader("📊 Decision & Risk Analysis Report")
 
-                res_col1, res_col2, res_col3, res_col4 = st.columns(4)
+                pred_val = data["prediction"]
+                label_str = data["label"]
+                prob_val = data["fraud_probability"]
+                risk_lvl = data["risk_level"]
+                risk_flag = data.get("consensus_flag", "CLEAN")
+                is_anom = data.get("is_anomaly", False)
+                anom_score = data.get("anomaly_score", 0.0)
+
+                # Prominent Banner Alert
+                if pred_val == 1 and is_anom:
+                    st.error(f"### 🚨 CONFIRMED FRAUD DETECTED — Flag: `{risk_flag}` | Risk: `{risk_lvl}`")
+                elif pred_val == 1:
+                    st.error(f"### 🚨 SUPERVISED FRAUD DETECTED — Flag: `{risk_flag}` | Risk: `{risk_lvl}`")
+                elif is_anom:
+                    st.warning(f"### ⚠️ UNUSUAL ANOMALY ALERT — Flag: `{risk_flag}` | Risk: `{risk_lvl}`")
+                else:
+                    st.success(f"### ✅ LEGITIMATE TRANSACTION — Flag: `{risk_flag}` | Risk: `{risk_lvl}`")
+
+                # Prominent Metric Cards
+                m_col1, m_col2, m_col3, m_col4, m_col5, m_col6 = st.columns(6)
                 
-                with res_col1:
-                    if data["prediction"] == 1:
-                        st.error("🚨 FRAUD DETECTED")
-                    else:
-                        st.success("✅ LEGITIMATE TRANSACTION")
+                with m_col1:
+                    st.metric("Fraud Probability", f"{prob_val:.2%}")
+                    st.progress(float(prob_val))
 
-                with res_col2:
-                    st.metric("Fraud Probability", f"{data['fraud_probability']:.2%}")
-                    st.progress(float(data['fraud_probability']))
+                with m_col2:
+                    st.metric("XGBoost Decision", label_str)
 
-                with res_col3:
-                    certainty = data.get('prediction_confidence', data.get('confidence', 0.0))
-                    st.metric("Model Certainty (Uncalibrated)", f"{certainty:.2%}")
+                with m_col3:
+                    anom_status = "Anomaly (-1)" if is_anom else "Normal (+1)"
+                    st.metric("Isolation Forest", anom_status)
 
-                with res_col4:
-                    risk = data["risk_level"]
-                    consensus = data.get("consensus_flag", "N/A")
-                    if risk == "HIGH":
-                        st.error(f"Risk: {risk} ({consensus})")
-                    elif risk == "MEDIUM":
-                        st.warning(f"Risk: {risk} ({consensus})")
-                    else:
-                        st.info(f"Risk: {risk} ({consensus})")
+                with m_col4:
+                    st.metric("Risk Level", risk_lvl)
 
-                st.caption(f"⚡ Request completed in {calc_latency:.2f} ms via FastAPI REST API (Dual-Engine XGBoost v2 + Isolation Forest). Model Certainty = max(p, 1-p) uncalibrated probability distance.")
+                with m_col5:
+                    st.metric("Risk Flag", risk_flag)
+
+                with m_col6:
+                    st.metric("API Latency", f"{calc_latency:.2f} ms")
+
+                st.caption(f"⚡ Inferred live via FastAPI microservice in {calc_latency:.2f} ms using dual-engine consensus (XGBoost + Isolation Forest).")
             else:
                 st.error(f"API Exception ({res.status_code}): {res.text}")
 
