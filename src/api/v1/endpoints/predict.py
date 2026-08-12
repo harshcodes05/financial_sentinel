@@ -18,10 +18,10 @@ def predict_transaction(transaction: TransactionInput):
     try:
         return predictor_service.predict(transaction)
     except Exception as e:
-        logger.error(f"Prediction API error: {str(e)}")
+        logger.error(f"Prediction API internal error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred during prediction: {str(e)}"
+            detail="An internal server error occurred during prediction processing."
         )
 
 @router.post(
@@ -37,8 +37,8 @@ def predict_batch(transactions: List[TransactionInput]):
         logger.info(f"Processed batch prediction for {len(transactions)} transactions.")
         return results
     except Exception as e:
-        logger.error(f"Batch Prediction API error: {str(e)}")
+        logger.error(f"Batch Prediction API internal error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred during batch prediction: {str(e)}"
+            detail="An internal server error occurred during batch prediction processing."
         )

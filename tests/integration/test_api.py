@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from src.api.main import app
 
@@ -64,12 +65,12 @@ def test_predict_batch_invalid_item_rejected_422():
         {
             "Time": 0.0,
             "Amount": 100.0,
-            "v_features": [0.0] * 28  # Valid item
+            "v_features": [0.0] * 28
         },
         {
             "Time": 10.0,
             "Amount": 50.0,
-            "v_features": [0.0] * 27  # Invalid item (27 features)
+            "v_features": [0.0] * 27
         }
     ]
     response = client.post("/api/v1/predict-batch", json=payload)
@@ -109,7 +110,6 @@ def test_api_missing_field_rejected_422():
     """Test API rejects missing required Amount field with HTTP 422."""
     payload = {
         "Time": 0.0,
-        # Amount missing
         "v_features": [0.0] * 28
     }
     response = client.post("/api/v1/predict", json=payload)
@@ -124,3 +124,17 @@ def test_api_invalid_type_rejected_422():
     }
     response = client.post("/api/v1/predict", json=payload)
     assert response.status_code == 422
+
+def test_api_internal_exception_returns_generic_500():
+    """Test API returns generic sanitized error message on internal exception without exposing raw error details."""
+    payload = {
+        "Time": 0.0,
+        "Amount": 100.0,
+        "v_features": [0.0] * 28
+    }
+    with patch("src.api.v1.endpoints.predict.predictor_service.predict", side_effect=RuntimeError("Secret DB Connection Failed")):
+        response = client.post("/api/v1/predict", json=payload)
+        assert response.status_code == 500
+        detail = response.json()["detail"]
+        assert detail == "An internal server error occurred during prediction processing."
+        assert "Secret DB Connection Failed" not in detail
