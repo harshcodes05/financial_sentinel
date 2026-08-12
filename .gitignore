@@ -1,23 +1,24 @@
 # Virtual Environment
 venv/
 .venv/
+env/
 
-# Python
+# Python Cache & Compiled Files
 __pycache__/
 *.py[cod]
+*$py.class
+.pytest_cache/
 
-# Jupyter
+# Dataset (Exceeds GitHub 100MB file limit)
+data/
+*.csv
+
+# Jupyter & IDE
 .ipynb_checkpoints/
-
-# VS Code
 .vscode/
+.idea/
 
-# OS
+# OS & Logs
 .DS_Store
 Thumbs.db
-
-# Dataset
-data/
-
-# Model checkpoints
 *.log
