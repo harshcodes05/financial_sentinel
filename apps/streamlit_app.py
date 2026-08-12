@@ -51,7 +51,6 @@ st.markdown('<div class="main-header">🛡️ Financial Sentinel</div>', unsafe_
 st.markdown('<div class="sub-header">Credit Card Fraud Detection & Risk Analysis Platform</div>', unsafe_allow_html=True)
 
 # Sidebar System Health & Controls
-st.sidebar.image("https://img.icons8.com/color/96/000000/shield-with-authorization-providers.png", width=70)
 st.sidebar.title("System Control")
 
 # Check API Health & Latency
@@ -74,7 +73,7 @@ st.sidebar.markdown(f"""
 **System Specs:**
 - **Inference Engine:** FastAPI v2.0
 - **Backend Endpoint:** `{API_URL}`
-- **Model Stack:** XGBoost v2 + Isolation Forest
+- **Model Stack:** XGBoost + Isolation Forest
 - **Optimization:** F2-Tuned Decision Threshold
 - **Validation:** Pydantic Strict Schema
 """)
@@ -86,7 +85,7 @@ with kpi_col1:
 with kpi_col2:
     st.metric("API Latency", f"{latency_ms:.1f} ms" if api_online else "N/A")
 with kpi_col3:
-    st.metric("Model Architecture", "XGBoost v2", "Dual-Engine")
+    st.metric("Model Architecture", "XGBoost", "Dual-Engine")
 with kpi_col4:
     st.metric("Security Level", "Strict Validation", "Pydantic v2")
 
