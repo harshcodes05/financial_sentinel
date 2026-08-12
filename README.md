@@ -50,6 +50,19 @@ financial_sentinel/
 
 ---
 
+## ⚡ Dual-Model Risk Consensus Logic
+
+The inference engine combines supervised XGBoost ($p \ge \theta^* = 0.8854$) and unsupervised Isolation Forest (`is_anomaly`) outputs to determine the final risk consensus decision:
+
+| Supervised XGBoost | Unsupervised Isolation Forest | Consensus Flag (`consensus_flag`) | Risk Level (`risk_level`) | Operational Action |
+| :---: | :---: | :---: | :---: | :--- |
+| **Fraud ($1$)** | **Anomaly (`True`)** | `CONFIRMED_FRAUD` | **HIGH** | Immediate transaction block & priority fraud alert. |
+| **Fraud ($1$)** | Normal (`False`) | `SUPERVISED_FRAUD_FLAG` | **HIGH / MEDIUM** | Known fraud pattern match; queue for analyst review. |
+| Normal ($0$) | **Anomaly (`True`)** | `ANOMALY_ALERT` | **MEDIUM** | Zero-day behavioral anomaly; soft block / step-up auth. |
+| Normal ($0$) | Normal (`False`) | `CLEAN` | **LOW** | Standard purchasing pattern; instant transaction approval. |
+
+---
+
 ## ⚙️ Deployment Modes
 
 The application supports two primary environment modes configured in `src/config.py` via `ENV`:
@@ -143,7 +156,7 @@ Empirically measured via `python -m scripts.benchmark_latency` across 500 single
 | Benchmark Metric | Mean (ms) | p50 / Median (ms) | p95 (ms) | p99 (ms) |
 | :--- | :---: | :---: | :---: | :---: |
 | **Single Request (`POST /predict`)** | **37.19 ms** | **32.85 ms** | **56.58 ms** | **113.58 ms** |
-| **Batch Request (`POST /predict-batch`, 100 items)** | **3220.46 ms** | **3102.80 ms** | **4506.56 ms** | **5076.82 ms** |
+| **Batch Request (`POST /predict-batch`, 100 items)** | **3,220.46 ms** | **3,102.80 ms** | **4,506.56 ms** | **5,076.82 ms** |
 | **Batch Latency Per Item** | **32.21 ms** | **31.03 ms** | **45.07 ms** | **50.77 ms** |
 
 ---
@@ -218,6 +231,5 @@ docker-compose up --build
 
 ---
 
-## 🛡️ License & Author
+## Author
 * **Author:** Harsh Sharma
-* **License:** MIT
