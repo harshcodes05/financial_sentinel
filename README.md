@@ -1,193 +1,95 @@
-# Financial Sentinel: Credit Card Fraud Detection using Machine Learning
+# 🛡️ Financial Sentinel: Enterprise Credit Card Fraud Detection Microservice
 
-An end-to-end machine learning project for detecting fraudulent credit card transactions using supervised learning. The project covers the complete workflow from data exploration and preprocessing to model training, evaluation, serialization, and deployment.
-
----
-
-## Project Overview
-
-Credit card fraud causes significant financial losses worldwide and presents a challenging machine learning problem due to the extreme class imbalance between legitimate and fraudulent transactions.
-
-This project develops a fraud detection system capable of identifying fraudulent transactions while minimizing false alarms. The complete machine learning pipeline includes data quality assessment, exploratory data analysis, preprocessing, model development, evaluation, and deployment.
+An end-to-end, production-grade machine learning microservice for detecting fraudulent credit card transactions in real-time. Built with **FastAPI**, **Pydantic v2**, **XGBoost**, **Isolation Forest**, **Streamlit**, **Pytest**, and **Docker**.
 
 ---
 
-## Features
-
-- Data Quality Assessment
-- Exploratory Data Analysis (EDA)
-- Class Imbalance Analysis
-- Correlation Analysis
-- Feature Scaling using StandardScaler
-- SMOTE Oversampling
-- Logistic Regression
-- Random Forest Classifier
-- Model Evaluation using multiple metrics
-- ROC Curve Comparison
-- Precision-Recall Curve Comparison
-- Model Serialization using Joblib
-- Streamlit Web Application
-
----
-
-## Dataset
-
-This project uses the **Credit Card Fraud Detection Dataset**.
-
-Due to GitHub's file size limitations, the dataset is **not included** in this repository.
-
-Download the dataset from Kaggle:
-
-https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
-
-After downloading, place the dataset inside the project directory:
-
-```text
-data/
-└── creditcard.csv
-```
-
----
-
-## Project Structure
+## 🌟 System Architecture
 
 ```text
 financial_sentinel/
-│
-├── data/
-│
+├── config/                     # Environment configuration loader
+├── src/
+│   ├── config.py               # Pydantic-Settings & model registry pathing
+│   ├── utils/logger.py         # Structured logging engine
+│   ├── schemas/                # Pydantic data validation layer
+│   ├── services/               # Preprocessor & Dual-Model inference engine
+│   └── api/                    # FastAPI REST API layer (/health, /ready, /predict, /predict-batch)
+├── apps/
+│   └── streamlit_app.py        # Enterprise UI Dashboard (Live latency tracking, preset profiles, batch CSV)
+├── scripts/
+│   └── train_v2.py             # Automated XGBoost + Isolation Forest training script
+├── tests/
+│   ├── unit/                   # Schema & predictor unit tests
+│   └── integration/            # FastAPI HTTP endpoint tests
 ├── models/
-│   ├── random_forest_model.pkl
-│   └── standard_scaler.pkl
-│
-├── notebooks/
-│   └── 01_exploration.ipynb
-│
-├── .gitignore
-├── app.py
-├── README.md
-└── requirements.txt
+│   ├── v1/                     # Legacy Random Forest artifacts
+│   └── v2/                     # Active XGBoost v2 + Isolation Forest & metadata.json
+├── Dockerfile.api              # Backend Docker image definition
+└── docker-compose.yml          # Container orchestration
 ```
 
 ---
 
-## Machine Learning Pipeline
+## 📊 Model Performance Benchmarks
 
-1. Data Loading
-2. Data Quality Assessment
-3. Exploratory Data Analysis
-4. Feature Analysis
-5. Data Preprocessing
-6. Train-Test Split
-7. Feature Scaling
-8. SMOTE Oversampling
-9. Model Training
-10. Model Evaluation
-11. Model Comparison
-12. Model Serialization
-13. Streamlit Deployment
+| Metric | Model v1 (Random Forest) | Model v2 (XGBoost + Isolation Forest) | Improvement |
+| :--- | :---: | :---: | :---: |
+| **Model Stack** | Random Forest | **XGBoost + Isolation Forest** | Dual-Engine Risk Consensus |
+| **Imbalance Strategy** | SMOTE | **Cost Weighting (`scale_pos_weight`)** | Direct Loss Tuning |
+| **Fraud Recall** | 72.45% | **84.00%** | **+11.55% More Fraud Caught** |
+| **F1 Score** | 0.7717 | **0.8079** | **+3.62% Precision/Recall Balance** |
+| **ROC-AUC** | 0.9669 | **0.9734** | **Higher Discrimination** |
+| **Decision Threshold** | 0.5000 | **0.8854 (F2-Optimized)** | Loaded from `metadata.json` |
 
 ---
 
-## Models Evaluated
+## 🚀 Quick Start Guide
 
-| Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
-|------|---------:|----------:|--------:|---------:|---------:|
-| Logistic Regression | 0.9741 | 0.0578 | 0.9184 | 0.1088 | 0.9708 |
-| Random Forest | **0.9993** | **0.8256** | 0.7245 | **0.7717** | 0.9669 |
-
----
-
-## Technologies Used
-
-- Python
-- NumPy
-- Pandas
-- Matplotlib
-- Seaborn
-- Scikit-learn
-- Imbalanced-learn (SMOTE)
-- Joblib
-- Streamlit
-
----
-
-## Installation
-
-Clone the repository:
-
+### 1. Environment Setup
 ```bash
+# Clone Repository
 git clone https://github.com/harshcodes05/financial_sentinel.git
-```
-
-Move into the project directory:
-
-```bash
 cd financial_sentinel
-```
 
-
-Download the dataset from Kaggle and place it inside:
-
-```text
-data/
-└── creditcard.csv
-```
-
-Run the Streamlit application:
-
-```bash
-https://financialsentinel-jhmuxkenwhtnototztp3ah.streamlit.app/
-```
-
-Create and activate a virtual environment (recommended):
-
-```bash
+# Create & Activate Virtual Environment
 python -m venv venv
-```
+source venv/Scripts/activate  # On Windows Git Bash
 
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Linux/macOS:
-
-```bash
-source venv/bin/activate
-```
-
-Install the required packages:
-
-```bash
+# Install Production Dependencies
 pip install -r requirements.txt
 ```
 
----
+### 2. Run Automated Test Suite
+```bash
+python -m pytest tests/
+```
 
-## Results
+### 3. Start Backend API Server
+```bash
+python -m src.api.main
+# Server runs on http://127.0.0.1:8000
+# OpenAPI Docs: http://127.0.0.1:8000/docs
+```
 
-Two machine learning algorithms were evaluated for fraud detection.
-
-- Logistic Regression achieved excellent recall (**91.84%**) but generated a high number of false positives, resulting in low precision.
-- Random Forest achieved the best balance between precision, recall, and F1-score while maintaining excellent overall performance.
-
-Based on these results, **Random Forest** was selected as the final model for deployment.
-
----
-
-## Future Improvements
-
-- Hyperparameter tuning using GridSearchCV or RandomizedSearchCV
-- Evaluation of XGBoost and LightGBM
-- Model explainability using SHAP
-- Threshold optimization for business-specific objectives
-- Real-time fraud detection pipeline
-- Cloud deployment
+### 4. Start Enterprise Streamlit Dashboard
+```bash
+streamlit run apps/streamlit_app.py
+# UI opens on http://localhost:8501
+```
 
 ---
 
-## Author
+## 🐳 Docker Deployment
 
-**Harsh Sharma**
+To build and run the backend microservice inside an isolated Linux container:
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## 🛡️ License & Author
+* **Author:** Harsh Sharma
+* **License:** MIT
