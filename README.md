@@ -137,9 +137,9 @@ Financial Sentinel uses two complementary models:
 Credit card fraud datasets are heavily skewed. Rather than generating synthetic samples using SMOTE, the active XGBoost model uses cost weighting:
 
 $$
-\text{scale\_pos\_weight}
+\mathrm{scale\_pos\_weight}
 =
-\frac{N_{\text{legit}}}{N_{\text{fraud}}}
+\frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}}
 \approx 577.88
 $$
 
