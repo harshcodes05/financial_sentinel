@@ -94,71 +94,85 @@ st.divider()
 # Navigation Tabs
 tab1, tab2 = st.tabs(["⚡ Single Transaction Inspector", "📁 Batch CSV Fraud Inspector"])
 
+# Default V Feature Profiles
+default_legit_v = [
+    -1.359807, -0.072781, 2.536347, 1.378155, -0.338321, 0.462388, 0.239599, 0.098698,
+    0.363787, 0.090794, -0.551600, -0.617801, -0.991390, -0.311169, 1.468177, -0.470401,
+    0.207971, 0.025791, 0.403993, 0.251412, -0.018307, 0.277838, -0.110474, 0.066928,
+    0.128539, -0.189115, 0.133558, -0.021053
+]
+
+default_fraud_v = [
+    -2.303350, 1.759247, -0.359745, 2.330243, -0.821628, -0.075788, 0.562320, -0.399147,
+    -0.238253, -1.525412, 2.032912, -6.560124, 0.022937, -1.470102, -0.698826, -2.282194,
+    -4.781831, -2.615665, -1.334441, -0.430022, -0.294166, -0.932391, 0.172726, -0.087330,
+    -0.156114, -0.542628, 0.039566, -0.153029
+]
+
+# Initialize Session State Defaults if Not Present
+if "tx_time_val" not in st.session_state:
+    st.session_state["tx_time_val"] = 0.0
+if "tx_amount_val" not in st.session_state:
+    st.session_state["tx_amount_val"] = 149.62
+for idx in range(28):
+    if f"v_input_{idx+1}" not in st.session_state:
+        st.session_state[f"v_input_{idx+1}"] = default_legit_v[idx]
+
 # Tab 1: Single Transaction Inspector
 with tab1:
     st.subheader("Interactive Transaction Inspector")
     st.caption("Select a preset profile or manually enter feature parameters to analyze fraud risk.")
 
-    # Preset Profile Selector
+    # Preset Profile Selector Buttons
     preset_col1, preset_col2, preset_col3 = st.columns(3)
     
-    preset_selected = None
     with preset_col1:
         if st.button("🟢 Load Normal Purchase Preset", use_container_width=True):
-            preset_selected = "legit"
+            st.session_state["tx_time_val"] = 0.0
+            st.session_state["tx_amount_val"] = 149.62
+            for i in range(28):
+                st.session_state[f"v_input_{i+1}"] = default_legit_v[i]
+            st.session_state["auto_analyze"] = True
+            st.rerun()
+
     with preset_col2:
-        if st.button("🟡 Load Medium Risk Preset", use_container_width=True):
-            preset_selected = "medium"
+        if st.button("🟡 Load Anomaly Alert Preset", use_container_width=True):
+            st.session_state["tx_time_val"] = 1200.0
+            st.session_state["tx_amount_val"] = 850.00
+            for i in range(28):
+                st.session_state[f"v_input_{i+1}"] = default_legit_v[i]
+            st.session_state["auto_analyze"] = True
+            st.rerun()
+
     with preset_col3:
         if st.button("🚨 Load High Risk Fraud Preset", use_container_width=True):
-            preset_selected = "fraud"
-
-    # Default V Values
-    default_legit_v = [
-        -1.359807, -0.072781, 2.536347, 1.378155, -0.338321, 0.462388, 0.239599, 0.098698,
-        0.363787, 0.090794, -0.551600, -0.617801, -0.991390, -0.311169, 1.468177, -0.470401,
-        0.207971, 0.025791, 0.403993, 0.251412, -0.018307, 0.277838, -0.110474, 0.066928,
-        0.128539, -0.189115, 0.133558, -0.021053
-    ]
-
-    default_fraud_v = [
-        -2.303350, 1.759247, -0.359745, 2.330243, -0.821628, -0.075788, 0.562320, -0.399147,
-        -0.238253, -1.525412, 2.032912, -6.560124, 0.022937, -1.470102, -0.698826, -2.282194,
-        -4.781831, -2.615665, -1.334441, -0.430022, -0.294166, -0.932391, 0.172726, -0.087330,
-        -0.156114, -0.542628, 0.039566, -0.153029
-    ]
-
-    if preset_selected == "fraud":
-        active_time = 4462.0
-        active_amount = 239.93
-        active_v = default_fraud_v
-    elif preset_selected == "medium":
-        active_time = 1200.0
-        active_amount = 850.00
-        active_v = default_legit_v
-    else:
-        active_time = 0.0
-        active_amount = 149.62
-        active_v = default_legit_v
+            st.session_state["tx_time_val"] = 4462.0
+            st.session_state["tx_amount_val"] = 239.93
+            for i in range(28):
+                st.session_state[f"v_input_{i+1}"] = default_fraud_v[i]
+            st.session_state["auto_analyze"] = True
+            st.rerun()
 
     input_col1, input_col2 = st.columns(2)
     with input_col1:
-        tx_time = st.number_input("Time Elapsed (Seconds)", min_value=0.0, value=active_time, step=10.0)
+        tx_time = st.number_input("Time Elapsed (Seconds)", min_value=0.0, step=10.0, key="tx_time_val")
     with input_col2:
-        tx_amount = st.number_input("Transaction Amount (€)", min_value=0.0, value=active_amount, step=10.0)
+        tx_amount = st.number_input("Transaction Amount (€)", min_value=0.0, step=10.0, key="tx_amount_val")
 
-    with st.expander("⚙️ Fine-Tune PCA Anonymized Features (V1 to V28)", expanded=False):
+    with st.expander("⚙️ Fine-Tune PCA Anonymized Features (V1 to V28)", expanded=True):
         v_features = []
         v_cols = st.columns(4)
         for i in range(28):
             with v_cols[i % 4]:
-                v_val = st.number_input(f"V{i+1}", value=active_v[i], format="%.6f", key=f"v_input_{i+1}")
+                v_val = st.number_input(f"V{i+1}", format="%.6f", key=f"v_input_{i+1}")
                 v_features.append(v_val)
 
     st.markdown("<br>", unsafe_allow_html=True)
     analyze_btn = st.button("🚀 Analyze Transaction Risk", type="primary", use_container_width=True)
 
-    if analyze_btn or preset_selected is not None:
+    should_analyze = analyze_btn or st.session_state.pop("auto_analyze", False)
+
+    if should_analyze:
         payload = {
             "Time": tx_time,
             "Amount": tx_amount,
@@ -181,7 +195,6 @@ with tab1:
                 risk_lvl = data["risk_level"]
                 risk_flag = data.get("consensus_flag", "CLEAN")
                 is_anom = data.get("is_anomaly", False)
-                anom_score = data.get("anomaly_score", 0.0)
 
                 # Prominent Banner Alert
                 if pred_val == 1 and is_anom:
