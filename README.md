@@ -15,7 +15,7 @@ The project focuses on the complete ML-to-application workflow:
 
 ---
 
-## 🌟 System Architecture
+## System Architecture
 
 ```text
                          User
@@ -71,7 +71,7 @@ The project focuses on the complete ML-to-application workflow:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 financial_sentinel/
@@ -117,19 +117,19 @@ financial_sentinel/
 
 ---
 
-## 🧠 Machine Learning Pipeline
+## Machine Learning Pipeline
 
 Financial Sentinel uses two complementary models:
 
 1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate $P(\text{Fraud} \mid X)$. Output probabilities are evaluated against an optimized decision threshold $\theta^*$ loaded from `models/v2/metadata.json`.
 2. **Unsupervised Isolation Forest:** Trained exclusively on legitimate transactions ($y=0$) to establish a normal purchasing baseline ($P(X \mid Y=0)$). Flags structural feature outliers exceeding a $0.5\%$ contamination threshold ($s(x, n) < 0$).
 
-### ⚖️ Handling Class Imbalance
+### Handling Class Imbalance
 Credit card fraud datasets are heavily skewed. Rather than generating synthetic data (SMOTE), the active XGBoost model uses cost weighting:
 $$\text{scale\_pos\_weight} = \frac{N_{\text{legit}}}{N_{\text{fraud}}} \approx 577.88$$
 This penalizes False Negatives $577.88\times$ more heavily directly inside XGBoost's log-loss gradient without distorting empirical joint distributions.
 
-### 🎯 $F_2$-Based Decision Threshold
+### $F_2$-Based Decision Threshold
 The default $0.50$ decision threshold is mathematically suboptimal for skewed distributions. Because uncaught fraud carries higher operational impact than false alerts, we optimize the $F_2$ metric:
 $$F_2 = 5 \cdot \frac{\text{Precision} \times \text{Recall}}{4 \cdot \text{Precision} + \text{Recall}}$$
 Evaluating the Precision-Recall curve yields an optimal decision threshold:
@@ -138,7 +138,7 @@ which is stored in `models/v2/metadata.json` and loaded dynamically during infer
 
 ---
 
-## 📈 Model Performance Benchmarks
+## Model Performance Benchmarks
 
 Empirical comparison between the legacy Random Forest baseline and the active XGBoost + Isolation Forest stack:
 
@@ -152,7 +152,7 @@ Empirical comparison between the legacy Random Forest baseline and the active XG
 
 ---
 
-## 🔍 Dual-Model Risk Consensus Logic
+## Dual-Model Risk Consensus Logic
 
 The inference service combines supervised and unsupervised model outputs:
 
@@ -165,7 +165,7 @@ The inference service combines supervised and unsupervised model outputs:
 
 ---
 
-## 📏 Prediction Certainty (`prediction_confidence`)
+## Prediction Certainty (`prediction_confidence`)
 
 The API exposes `prediction_confidence`, intentionally documented as **uncalibrated**:
 $$\text{prediction\_confidence} = \max(p, 1 - p)$$
@@ -173,7 +173,7 @@ where $p$ is the raw XGBoost fraud probability. It represents the model's absolu
 
 ---
 
-## ⏱️ Empirical Inference Latency
+## Empirical Inference Latency
 
 Empirically measured via `python -m scripts.benchmark_latency` (500 single requests & 50 batch requests of 100 items each):
 
@@ -185,7 +185,7 @@ Empirically measured via `python -m scripts.benchmark_latency` (500 single reque
 
 ---
 
-## 🔌 REST API Endpoints
+## REST API Endpoints
 
 Base URL: `http://127.0.0.1:8000/api/v1`
 
@@ -228,7 +228,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`
 
 ---
 
-## 🖥️ Streamlit Dashboard
+## Streamlit Dashboard
 
 The Streamlit UI frontend (`apps/streamlit_app.py`) provides two interactive workflows:
 
@@ -243,7 +243,7 @@ streamlit run apps/streamlit_app.py
 
 ---
 
-## 🔒 Security & Resilience
+## Security & Resilience
 
 - **Strict Schema Bounds:** Pydantic v2 enforces non-negative constraints (`Time >= 0`, `Amount >= 0`) and exact array dimensions (28 PCA features).
 - **Restricted CORS Policy:** Whitelists allowed origin domains (`localhost:8501`, `127.0.0.1:8501`, `localhost:8000`, `127.0.0.1:8000`) and allowed HTTP methods (`GET`, `POST`, `OPTIONS`).
@@ -252,7 +252,7 @@ streamlit run apps/streamlit_app.py
 
 ---
 
-## 🧪 Testing Suite
+## Testing Suite
 
 Execute the full 24-test automated Pytest suite:
 ```bash
@@ -262,7 +262,7 @@ python -m pytest tests/
 
 ---
 
-## ⚙️ Local Development & Docker Deployment
+## Local Development & Docker Deployment
 
 ### Local Development Setup
 ```bash
@@ -297,7 +297,7 @@ The Docker container executes production Uvicorn without development auto-reload
 
 ---
 
-## 📌 Project Limitations & Future Scope
+## Project Limitations & Future Scope
 
 ### Current Limitations
 - Model probabilities are uncalibrated (raw XGBoost scores).
@@ -313,6 +313,6 @@ The Docker container executes production Uvicorn without development auto-reload
 
 ---
 
-## 👤 Author
+## Author
 * **Author:** Harsh Sharma
 * **GitHub:** [harshcodes05](https://github.com/harshcodes05)
