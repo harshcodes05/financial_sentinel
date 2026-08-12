@@ -51,6 +51,30 @@ def test_predict_batch_valid_batch_accepts_200():
     assert len(data) == 2
     assert "consensus_flag" in data[0]
 
+def test_predict_batch_empty_list_returns_200():
+    """Test /api/v1/predict-batch accepts empty list [] and returns [] with 200 OK."""
+    payload = []
+    response = client.post("/api/v1/predict-batch", json=payload)
+    assert response.status_code == 200
+    assert response.json() == []
+
+def test_predict_batch_invalid_item_rejected_422():
+    """Test /api/v1/predict-batch rejects batch containing an invalid item (e.g. 27 features) with 422."""
+    payload = [
+        {
+            "Time": 0.0,
+            "Amount": 100.0,
+            "v_features": [0.0] * 28  # Valid item
+        },
+        {
+            "Time": 10.0,
+            "Amount": 50.0,
+            "v_features": [0.0] * 27  # Invalid item (27 features)
+        }
+    ]
+    response = client.post("/api/v1/predict-batch", json=payload)
+    assert response.status_code == 422
+
 def test_api_27_features_rejected_422():
     """Test API rejects transaction payload with 27 v_features with HTTP 422."""
     payload = {
