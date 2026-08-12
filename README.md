@@ -51,7 +51,7 @@ The project focuses on the complete ML-to-application workflow:
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Component | Technology |
 | :--- | :--- |
