@@ -50,7 +50,9 @@ class PredictorService:
         # 1. Supervised Model (XGBoost) - Probability & Threshold decision
         fraud_probability = float(self.model.predict_proba(scaled_df)[0][1])
         prediction = int(fraud_probability >= self.threshold)
-        confidence = float(max(fraud_probability, 1.0 - fraud_probability))
+        
+        # Uncalibrated probability distance from decision boundary (|p - 0.5| + 0.5)
+        prediction_confidence = float(max(fraud_probability, 1.0 - fraud_probability))
 
         label = "Fraudulent" if prediction == 1 else "Legitimate"
 
@@ -85,7 +87,7 @@ class PredictorService:
             prediction=prediction,
             label=label,
             fraud_probability=fraud_probability,
-            confidence=confidence,
+            prediction_confidence=prediction_confidence,
             is_anomaly=is_anomaly,
             anomaly_score=anomaly_score,
             risk_level=risk_level,

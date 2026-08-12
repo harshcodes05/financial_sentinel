@@ -189,7 +189,8 @@ with tab1:
                     st.progress(float(data['fraud_probability']))
 
                 with res_col3:
-                    st.metric("Model Confidence", f"{data['confidence']:.2%}")
+                    certainty = data.get('prediction_confidence', data.get('confidence', 0.0))
+                    st.metric("Model Certainty (Uncalibrated)", f"{certainty:.2%}")
 
                 with res_col4:
                     risk = data["risk_level"]
@@ -201,7 +202,7 @@ with tab1:
                     else:
                         st.info(f"Risk: {risk} ({consensus})")
 
-                st.caption(f"⚡ Request completed in {calc_latency:.2f} ms via FastAPI REST API (Dual-Engine XGBoost v2 + Isolation Forest).")
+                st.caption(f"⚡ Request completed in {calc_latency:.2f} ms via FastAPI REST API (Dual-Engine XGBoost v2 + Isolation Forest). Model Certainty = max(p, 1-p) uncalibrated probability distance.")
             else:
                 st.error(f"API Exception ({res.status_code}): {res.text}")
 

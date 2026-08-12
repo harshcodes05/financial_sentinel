@@ -28,7 +28,7 @@ def test_full_inference_pipeline_trace():
 
     # 2. Verify Pydantic Schema Output Keys
     expected_keys = {
-        "prediction", "label", "fraud_probability", "confidence",
+        "prediction", "label", "fraud_probability", "prediction_confidence",
         "is_anomaly", "anomaly_score", "risk_level", "consensus_flag"
     }
     assert expected_keys.issubset(data.keys())
@@ -57,7 +57,7 @@ def test_full_inference_pipeline_trace():
 
 def test_streamlit_ui_response_field_alignment():
     """Verifies that all fields rendered by Streamlit UI match the FastAPI PredictionResponse schema."""
-    ui_consumed_fields = ["prediction", "label", "fraud_probability", "confidence", "risk_level", "consensus_flag"]
+    ui_consumed_fields = ["prediction", "label", "fraud_probability", "prediction_confidence", "risk_level", "consensus_flag"]
     payload = {
         "Time": 0.0,
         "Amount": 100.0,

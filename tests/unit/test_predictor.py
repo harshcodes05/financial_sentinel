@@ -24,7 +24,7 @@ def test_prediction_response_schema_validation():
     assert res.prediction in [0, 1]
     assert res.label in ["Legitimate", "Fraudulent"]
     assert 0.0 <= res.fraud_probability <= 1.0
-    assert 0.5 <= res.confidence <= 1.0
+    assert 0.5 <= res.prediction_confidence <= 1.0
     assert isinstance(res.is_anomaly, bool)
     assert isinstance(res.anomaly_score, float)
     assert res.risk_level in ["LOW", "MEDIUM", "HIGH"]
