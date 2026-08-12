@@ -43,7 +43,7 @@ st.markdown("""
 
 # App Title Header
 st.markdown('<div class="main-header">🛡️ Financial Sentinel</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Enterprise Credit Card Fraud Detection & Risk Analysis Platform</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Enterprise Credit Card Fraud Detection & Dual-Engine Risk Platform</div>', unsafe_allow_html=True)
 
 # Sidebar System Health & Controls
 st.sidebar.image("https://img.icons8.com/color/96/000000/shield-with-authorization-providers.png", width=70)
@@ -67,9 +67,9 @@ except Exception:
 st.sidebar.divider()
 st.sidebar.markdown("""
 **System Specs:**
-- **Inference Engine:** FastAPI v1.0
-- **Model Version:** Random Forest v1
-- **Latency SLA:** < 50ms
+- **Inference Engine:** FastAPI v2.0
+- **Model Stack:** XGBoost v2 + Isolation Forest
+- **Optimization:** F2-Tuned Decision Threshold
 - **Validation:** Pydantic Strict Schema
 """)
 
@@ -80,7 +80,7 @@ with kpi_col1:
 with kpi_col2:
     st.metric("API Latency", f"{latency_ms:.1f} ms" if api_online else "N/A")
 with kpi_col3:
-    st.metric("Model Architecture", "Random Forest", "v1.0")
+    st.metric("Model Architecture", "XGBoost v2", "Dual-Engine")
 with kpi_col4:
     st.metric("Security Level", "Strict Validation", "Pydantic v2")
 
@@ -187,14 +187,15 @@ with tab1:
 
                 with res_col4:
                     risk = data["risk_level"]
+                    consensus = data.get("consensus_flag", "N/A")
                     if risk == "HIGH":
-                        st.error(f"Risk Tier: {risk}")
+                        st.error(f"Risk: {risk} ({consensus})")
                     elif risk == "MEDIUM":
-                        st.warning(f"Risk Tier: {risk}")
+                        st.warning(f"Risk: {risk} ({consensus})")
                     else:
-                        st.info(f"Risk Tier: {risk}")
+                        st.info(f"Risk: {risk} ({consensus})")
 
-                st.caption(f"⚡ Request completed in {calc_latency:.2f} ms via FastAPI REST API.")
+                st.caption(f"⚡ Request completed in {calc_latency:.2f} ms via FastAPI REST API (Dual-Engine XGBoost v2 + Isolation Forest).")
             else:
                 st.error(f"API Exception ({res.status_code}): {res.text}")
 
@@ -225,7 +226,6 @@ with tab2:
                 for idx in range(total):
                     row = batch_df.iloc[idx]
                     
-                    # Extract features matching expected ordering
                     row_time = float(row.get("Time", 0.0))
                     row_amount = float(row.get("Amount", 0.0))
                     row_v = [float(row.get(f"V{i+1}", 0.0)) for i in range(28)]
@@ -245,7 +245,8 @@ with tab2:
                                 "Amount (€)": row_amount,
                                 "Prediction": data["label"],
                                 "Fraud Probability": f"{data['fraud_probability']:.2%}",
-                                "Risk Tier": data["risk_level"]
+                                "Risk Tier": data["risk_level"],
+                                "Consensus": data.get("consensus_flag", "CLEAN")
                             })
                     except Exception:
                         pass
