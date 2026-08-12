@@ -202,10 +202,10 @@ with tab1:
         except Exception as e:
             st.error(f"Could not connect to FastAPI server: {e}")
 
-# Tab 2: Batch CSV Fraud Inspector
+# Tab 2: Batch CSV Fraud Inspector (Single High-Throughput REST Batch Request)
 with tab2:
     st.subheader("Batch CSV Fraud Detection")
-    st.caption("Upload a CSV file containing transaction data to perform bulk inference via the FastAPI microservice.")
+    st.caption("Upload a CSV file containing transaction data to perform bulk inference via the FastAPI `/predict-batch` microservice.")
 
     uploaded_file = st.file_uploader("Upload Transactions CSV", type=["csv"])
 
@@ -216,49 +216,60 @@ with tab2:
             st.dataframe(batch_df.head(5), use_container_width=True)
 
             if st.button("⚡ Process Batch Predictions", type="primary"):
-                results = []
                 progress_bar = st.progress(0)
                 status_text = st.empty()
 
-                total = min(len(batch_df), 100)  # Limit batch preview for responsiveness
-                status_text.text(f"Processing 1 to {total} transactions...")
+                total = min(len(batch_df), 100)  # Batch preview window
+                status_text.text(f"Assembling batch payload for {total} transactions...")
+                progress_bar.progress(0.2)
 
+                # Assemble batch payload array
+                batch_payload = []
                 for idx in range(total):
                     row = batch_df.iloc[idx]
-                    
                     row_time = float(row.get("Time", 0.0))
                     row_amount = float(row.get("Amount", 0.0))
                     row_v = [float(row.get(f"V{i+1}", 0.0)) for i in range(28)]
-
-                    payload = {
+                    batch_payload.append({
                         "Time": row_time,
                         "Amount": row_amount,
                         "v_features": row_v
-                    }
+                    })
 
-                    try:
-                        res = requests.post(f"{API_URL}/predict", json=payload, timeout=2)
-                        if res.status_code == 200:
-                            data = res.json()
-                            results.append({
+                status_text.text(f"Sending 1 high-performance batch request to {API_URL}/predict-batch...")
+                progress_bar.progress(0.6)
+
+                start_batch_t = time.time()
+                try:
+                    res = requests.post(f"{API_URL}/predict-batch", json=batch_payload, timeout=15)
+                    batch_latency = (time.time() - start_batch_t) * 1000
+
+                    if res.status_code == 200:
+                        batch_results = res.json()
+                        progress_bar.progress(1.0)
+                        status_text.success(f"⚡ Batch prediction complete in {batch_latency:.2f} ms via `/predict-batch`!")
+
+                        formatted_results = []
+                        for idx, item in enumerate(batch_results):
+                            formatted_results.append({
                                 "Row": idx + 1,
-                                "Amount (€)": row_amount,
-                                "Prediction": data["label"],
-                                "Fraud Probability": f"{data['fraud_probability']:.2%}",
-                                "Risk Tier": data["risk_level"],
-                                "Consensus": data.get("consensus_flag", "CLEAN")
+                                "Amount (€)": batch_payload[idx]["Amount"],
+                                "Prediction": item["label"],
+                                "Fraud Probability": f"{item['fraud_probability']:.2%}",
+                                "Risk Tier": item["risk_level"],
+                                "Consensus Flag": item.get("consensus_flag", "CLEAN")
                             })
-                    except Exception:
-                        pass
 
-                    progress_bar.progress((idx + 1) / total)
+                        res_df = pd.DataFrame(formatted_results)
+                        st.dataframe(res_df, use_container_width=True)
 
-                status_text.success("Batch processing complete!")
-                res_df = pd.DataFrame(results)
-                st.dataframe(res_df, use_container_width=True)
+                        fraud_count = len(res_df[res_df["Prediction"] == "Fraudulent"])
+                        st.warning(f"Flagged **{fraud_count}** fraudulent transactions out of {total} processed rows.")
+                    else:
+                        st.error(f"Batch API Error ({res.status_code}): {res.text}")
 
-                fraud_count = len(res_df[res_df["Prediction"] == "Fraudulent"])
-                st.warning(f"Flagged **{fraud_count}** fraudulent transactions out of {total} processed rows.")
+                except Exception as e:
+                    st.error(f"Failed to connect to FastAPI `/predict-batch` endpoint: {e}")
 
         except Exception as e:
             st.error(f"Error parsing CSV file: {e}")
