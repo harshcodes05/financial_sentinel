@@ -136,6 +136,18 @@ The machine learning pipeline evolved through three major iterations:
 
 ---
 
+## ⏱️ Empirical Inference Latency Benchmarks
+
+Empirically measured via `python -m scripts.benchmark_latency` across 500 single-request and 50 batch-request (100 items each) HTTP invocations:
+
+| Benchmark Metric | Mean (ms) | p50 / Median (ms) | p95 (ms) | p99 (ms) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Single Request (`POST /predict`)** | **37.19 ms** | **32.85 ms** | **56.58 ms** | **113.58 ms** |
+| **Batch Request (`POST /predict-batch`, 100 items)** | **3220.46 ms** | **3102.80 ms** | **4506.56 ms** | **5076.82 ms** |
+| **Batch Latency Per Item** | **32.21 ms** | **31.03 ms** | **45.07 ms** | **50.77 ms** |
+
+---
+
 ## 🔌 REST API Endpoints
 
 | Endpoint | Method | Description |
@@ -176,14 +188,19 @@ pip install -r requirements.txt
 python -m pytest tests/
 ```
 
-### 3. Start Backend REST API Server
+### 3. Run Latency Benchmark Suite
+```bash
+python -m scripts.benchmark_latency
+```
+
+### 4. Start Backend REST API Server
 ```bash
 python -m src.api.main
 # API runs on http://127.0.0.1:8000
 # OpenAPI Docs: http://127.0.0.1:8000/docs
 ```
 
-### 4. Start Enterprise Streamlit Dashboard
+### 5. Start Enterprise Streamlit Dashboard
 ```bash
 streamlit run apps/streamlit_app.py
 # UI opens on http://localhost:8501
