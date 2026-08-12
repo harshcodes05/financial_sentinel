@@ -1,8 +1,16 @@
 # Financial Sentinel: Credit Card Fraud Detection Microservice
-
+> A containerized fraud detection service combining supervised classification and unsupervised anomaly detection, exposed through FastAPI with an interactive Streamlit dashboard.
 An end-to-end machine learning microservice for credit card fraud detection and transaction risk analysis.
 
 Financial Sentinel combines a supervised **XGBoost classifier** with an unsupervised **Isolation Forest anomaly detector**, exposing the inference pipeline through a **FastAPI REST API** and an interactive **Streamlit dashboard**.
+
+## Key Results
+
+- **84.00% fraud recall**, compared with 72.45% for the Random Forest baseline
+- **0.8079 F1 score** and **0.9734 ROC-AUC**
+- **32.85 ms p50** single-request inference latency
+- **24/24 automated tests passing**
+- Dockerized FastAPI inference service with batch prediction support
 
 The project focuses on the complete ML-to-application workflow:
 - Data preprocessing & scaling
@@ -10,7 +18,7 @@ The project focuses on the complete ML-to-application workflow:
 - Decision-threshold optimization ($F_2$ score)
 - Unsupervised anomaly detection
 - Strict input schema validation
-- High-throughput REST API & batch inference
+- Low-latency REST API & batch inference
 - Dockerized container deployment
 
 ---
@@ -43,7 +51,7 @@ The project focuses on the complete ML-to-application workflow:
                  │                  │
                  └────────┬─────────┘
                           ▼
-                Risk Consensus Engine
+                Risk Aggregation Engine
                           │
                           ▼
                     JSON Response
@@ -59,7 +67,7 @@ The project focuses on the complete ML-to-application workflow:
 | **ASGI Server** | Uvicorn |
 | **Data Validation** | Pydantic v2 |
 | **Configuration** | Pydantic Settings |
-| **Supervised Model** | XGBoost v2 |
+| **Supervised Model** | XGBoost |
 | **Anomaly Detector** | Isolation Forest |
 | **Preprocessing** | scikit-learn StandardScaler |
 | **Frontend** | Streamlit |
@@ -86,7 +94,7 @@ financial_sentinel/
 │   │   └── prediction.py       # PredictionResponse dual-model schema
 │   ├── services/               # Core machine learning inference layer
 │   │   ├── preprocessor.py     # Feature scaling transformer
-│   │   └── predictor.py        # Dual-engine risk predictor & threshold logic
+│   │   └── predictor.py        # Dual-model risk prediction & threshold logic
 │   ├── utils/
 │   │   └── logger.py           # Structured logging engine
 │   └── config.py               # Pydantic-Settings & CORS configuration
@@ -100,7 +108,7 @@ financial_sentinel/
 │   └── integration/            # FastAPI REST API & full inference path integration tests
 ├── models/
 │   ├── v1/                     # Legacy Random Forest baseline artifacts
-│   └── v2/                     # Active XGBoost v2, Isolation Forest & metadata.json
+│   └── v2/                     # Active XGBoost, Isolation Forest & metadata
 │       ├── xgboost_model.pkl   # Supervised XGBoost classifier
 │       ├── isolation_forest_model.pkl # Unsupervised Isolation Forest anomaly detector
 │       ├── standard_scaler.pkl # Fitted StandardScaler feature transformer
@@ -108,9 +116,9 @@ financial_sentinel/
 │       ├── confusion_matrix.png # Reproducible evaluation confusion matrix heatmap
 │       └── precision_recall_curve.png # Reproducible F2 Precision-Recall curve
 ├── notebooks/
-│   └── 01_exploration.ipynb   # Exploratory Data Analysis & baseline model exploration
-├── Dockerfile.api              # Microservice Docker image definition
-├── docker-compose.yml          # Single-command microservice container orchestration
+│   └── 01_exploration.ipynb    # Exploratory Data Analysis & baseline model exploration
+├── Dockerfile.api              # FastAPI service Docker image definition
+├── docker-compose.yml           # Container orchestration configuration
 ├── pytest.ini                  # Pytest environment & path configuration
 └── requirements.txt            # Python dependencies
 ```
@@ -121,19 +129,16 @@ financial_sentinel/
 
 Financial Sentinel uses two complementary models:
 
-1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate $P(\mathrm{Fraud} \mid X)$. Output probabilities are evaluated against an optimized decision threshold $\theta^*$ loaded from `models/v2/metadata.json`.
+1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate fraud probability $P(\mathrm{Fraud} \mid X)$. Predictions are converted to binary fraud decisions using the optimized threshold $\theta^\*$ stored in `models/v2/metadata.json`.
 
-2. **Unsupervised Isolation Forest:** Trained exclusively on legitimate transactions ($y = 0$) to establish a baseline of normal transaction behavior. It flags structural feature outliers based on the anomaly decision boundary determined during training with a $0.5\%$ contamination setting.
+2. **Unsupervised Isolation Forest:** Trained exclusively on legitimate transactions ($y = 0$) to establish a baseline of normal transaction behavior. It flags structural feature outliers using a $0.5\%$ contamination setting selected during training.
 
 ### Handling Class Imbalance
 
 Credit card fraud datasets are heavily skewed. Rather than generating synthetic samples using SMOTE, the active XGBoost model uses cost weighting:
 
 $$
-\mathrm{scale\_pos\_weight}
-=
-\frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}}
-\approx 577.88
+\mathrm{scale\_pos\_weight} = \frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}} \approx 577.88
 $$
 
 This assigns substantially greater training weight to fraudulent examples, increasing their contribution to XGBoost's gradient and helping the classifier focus on the minority class without synthetically altering the training distribution.
@@ -143,14 +148,10 @@ This assigns substantially greater training weight to fraudulent examples, incre
 The default $0.50$ decision threshold is not necessarily optimal for a highly imbalanced fraud detection problem. Because fraud detection prioritizes recall when missed fraud carries greater operational impact than false alerts, the project optimizes the $F_2$ metric:
 
 $$
-F_2
-=
-5 \cdot
-\frac{\mathrm{Precision} \times \mathrm{Recall}}
-{4 \cdot \mathrm{Precision} + \mathrm{Recall}}
+F_2 = 5 \cdot \frac{\mathrm{Precision} \times \mathrm{Recall}}{4 \cdot \mathrm{Precision} + \mathrm{Recall}}
 $$
 
-Evaluating the Precision-Recall curve yields an optimal decision threshold:
+Selecting the threshold that maximizes $F_2$ on the validation set yields:
 
 $$
 \theta^* = 0.8854
@@ -164,13 +165,13 @@ The threshold is stored in `models/v2/metadata.json` and loaded dynamically duri
 
 Empirical comparison between the legacy Random Forest baseline and the active XGBoost + Isolation Forest stack:
 
-| Metric | Random Forest v1 Baseline | XGBoost v2 Active Stack | Change / Improvement |
-| :--- | :---: | :---: | :---: |
+| Metric | Random Forest Baseline | XGBoost Active Stack | Change / Improvement |
+| --- | ---: | ---: | --- |
 | **Fraud Recall** | 72.45% | **84.00%** | **+11.55 percentage points** |
 | **F1 Score** | 0.7717 | **0.8079** | **+0.0362** |
 | **ROC-AUC** | 0.9669 | **0.9734** | **+0.0065** |
-| **Decision Threshold** | 0.5000 | **0.8854** | $F_2$ Optimized |
-| **Imbalance Strategy** | SMOTE | **Cost Weighting (`scale_pos_weight`)** | Direct Loss Gradient Weighting |
+| **Decision Threshold** | 0.5000 | **0.8854** | $F_2$ optimized |
+| **Imbalance Strategy** | SMOTE | **Cost weighting (`scale_pos_weight`)** | Direct loss weighting |
 
 ---
 
@@ -178,8 +179,8 @@ Empirical comparison between the legacy Random Forest baseline and the active XG
 
 The inference service combines supervised and unsupervised model outputs:
 
-| Supervised XGBoost ($p \ge \theta^*$) | Unsupervised Isolation Forest (`is_anomaly`) | Risk Level | Consensus Flag (`consensus_flag`) |
-| :---: | :---: | :---: | :--- |
+| XGBoost Decision | Isolation Forest | Risk Level | Consensus Flag |
+| --- | --- | --- | --- |
 | **Fraud ($1$)** | **Anomaly (`True`)** | **HIGH** | `CONFIRMED_FRAUD` |
 | **Fraud ($1$)** | Normal (`False`) | **HIGH / MEDIUM** | `SUPERVISED_FRAUD_FLAG` |
 | Normal ($0$) | **Anomaly (`True`)** | **MEDIUM** | `ANOMALY_ALERT` |
@@ -190,14 +191,18 @@ The inference service combines supervised and unsupervised model outputs:
 ## Prediction Certainty (`prediction_confidence`)
 
 The API exposes `prediction_confidence`, intentionally documented as **uncalibrated**:
-$$\text{prediction\_confidence} = \max(p, 1 - p)$$
+
+$$
+\text{prediction\_confidence} = \max(p, 1 - p)
+$$
+
 where $p$ is the raw XGBoost fraud probability. It represents the model's absolute distance from the $50/50$ decision boundary rather than a Platt-scaled or isotonic-calibrated probability of correctness.
 
 ---
 
-## Empirical Inference Latency
+## Inference Latency
 
-Empirically measured via `python -m scripts.benchmark_latency` (500 single requests & 50 batch requests of 100 items each):
+Measured using `python -m scripts.benchmark_latency` across 500 single-request runs and 50 batch-request runs, with 100 transactions per batch:
 
 | Benchmark Metric | Mean (ms) | p50 / Median (ms) | p95 (ms) | p99 (ms) |
 | :--- | :---: | :---: | :---: | :---: |
@@ -218,7 +223,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`
 | `/api/v1/health` | `GET` | Service health status check |
 | `/api/v1/ready` | `GET` | Confirms required model artifacts are loaded |
 | `/api/v1/predict` | `POST` | Single transaction inference returning probability & risk consensus |
-| `/api/v1/predict-batch` | `POST` | High-throughput batch inference for transaction arrays |
+| `/api/v1/predict-batch` | `POST` | Batch inference for transaction arrays |
 
 ### Example Request (`POST /api/v1/predict`)
 ```json
@@ -315,7 +320,7 @@ docker-compose up --build -d
 # Check running status
 docker ps
 ```
-The Docker container executes production Uvicorn without development auto-reloading (`uvicorn src.api.main:app --host 0.0.0.0 --port 8000`).
+The Docker container runs Uvicorn without development auto-reloading (`uvicorn src.api.main:app --host 0.0.0.0 --port 8000`), matching the intended deployment configuration.
 
 ---
 
@@ -325,13 +330,13 @@ The Docker container executes production Uvicorn without development auto-reload
 - Model probabilities are uncalibrated (raw XGBoost scores).
 - Isolation Forest anomalies do not guarantee detection of all novel fraud types.
 - No persistent database or online retraining pipeline.
-- Single-instance lightweight deployment (not a distributed banking cluster).
+- Single-instance lightweight deployment without horizontal scaling.
 
 ### Potential Future Enhancements
-- Probability calibration via Platt Scaling or Isotonic Regression.
-- Model drift monitoring (Evidently AI) and automated retraining pipelines.
-- Rate limiting, API authentication, and Prometheus/Grafana observability.
-- Vectorized C++ batch inference optimization.
+- Probability calibration using Platt Scaling or Isotonic Regression.
+- Model drift monitoring and automated retraining pipelines.
+- API authentication, rate limiting, and Prometheus/Grafana observability.
+- Performance optimization for larger batch workloads.
 
 ---
 
