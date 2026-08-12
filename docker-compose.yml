@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: financial_sentinel_api
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
