@@ -1,6 +1,5 @@
-# Financial Sentinel: Credit Card Fraud Detection Microservice
+# Financial Sentinel: Credit Card Fraud Detection System
 > A containerized fraud detection service combining supervised classification and unsupervised anomaly detection, exposed through FastAPI with an interactive Streamlit dashboard.
-An end-to-end machine learning microservice for credit card fraud detection and transaction risk analysis.
 
 Financial Sentinel combines a supervised **XGBoost classifier** with an unsupervised **Isolation Forest anomaly detector**, exposing the inference pipeline through a **FastAPI REST API** and an interactive **Streamlit dashboard**.
 
@@ -143,6 +142,14 @@ $$
 
 This assigns substantially greater training weight to fraudulent examples, increasing their contribution to XGBoost's gradient and helping the classifier focus on the minority class without synthetically altering the training distribution.
 
+## Dataset
+
+Financial Sentinel is trained on the public Credit Card Fraud Detection dataset, containing anonymized PCA-transformed transaction features and a highly imbalanced fraud label.
+
+The dataset contains 284,807 transactions, of which 492 are fraudulent.
+
+> The dataset is used for research and demonstration purposes and does not represent real banking transaction data.
+
 ### $F_2$-Based Decision Threshold
 
 The default $0.50$ decision threshold is not necessarily optimal for a highly imbalanced fraud detection problem. Because fraud detection prioritizes recall when missed fraud carries greater operational impact than false alerts, the project optimizes the $F_2$ metric:
@@ -175,11 +182,11 @@ Empirical comparison between the legacy Random Forest baseline and the active XG
 
 ---
 
-## Dual-Model Risk Consensus Logic
+## Dual-Model Risk Aggregation Logic
 
 The inference service combines supervised and unsupervised model outputs:
 
-| XGBoost Decision | Isolation Forest | Risk Level | Consensus Flag |
+| XGBoost Decision | Isolation Forest | Risk Level | Risk Flag |
 | --- | --- | --- | --- |
 | **Fraud ($1$)** | **Anomaly (`True`)** | **HIGH** | `CONFIRMED_FRAUD` |
 | **Fraud ($1$)** | Normal (`False`) | **HIGH / MEDIUM** | `SUPERVISED_FRAUD_FLAG` |
@@ -314,7 +321,7 @@ streamlit run apps/streamlit_app.py
 
 ### Containerized Docker Deployment
 ```bash
-# Build and run microservice container
+# Build and start the API container
 docker-compose up --build -d
 
 # Check running status
