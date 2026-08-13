@@ -154,7 +154,7 @@ Financial Sentinel uses two complementary models:
 
 Credit card fraud datasets are heavily skewed. Rather than generating synthetic samples using SMOTE, the active XGBoost model uses cost weighting:
 
-$$\mathrm{scale\_pos\_weight} = \frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}} \approx 577.88$$
+$$\mathrm{scale-pos-weight} = \frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}} \approx 577.88$$
 
 This assigns substantially greater training weight to fraudulent examples, increasing their contribution to XGBoost's gradient and helping the classifier focus on the minority class without synthetically altering the training distribution.
 
@@ -286,30 +286,7 @@ The Streamlit UI frontend (`apps/streamlit_app.py`) provides two interactive wor
 
 ### Dashboard Preview
 
-```text
-+-----------------------------------------------------------------------------------+
-| 🛡️ Financial Sentinel  |  Credit Card Fraud Detection & Risk Analysis Platform     |
-+-----------------------------------------------------------------------------------+
-| System Status: 🟢 API Online (32.8 ms) | Model: XGBoost + Isolation Forest        |
-+-----------------------------------------------------------------------------------+
-| [ ⚡ Single Transaction Inspector ]   [ 📁 Batch CSV Fraud Inspector ]            |
-|                                                                                   |
-|  Presets: [🟢 Normal Purchase]  [🟡 Anomaly Alert]  [🚨 High Risk Fraud]           |
-|                                                                                   |
-|  Time Elapsed: 4462.0 s                   Transaction Amount: €239.93             |
-|  PCA Features: V1 .. V28 (Adjustable Sliders / Number Inputs)                      |
-|                                                                                   |
-|  [ 🚀 Analyze Transaction Risk ]                                                  |
-|                                                                                   |
-|  -------------------------------------------------------------------------------  |
-|  🚨 CONFIRMED FRAUD DETECTED — Flag: CONFIRMED_FRAUD | Risk: HIGH                 |
-|                                                                                   |
-|  +------------------+  +------------------+  +------------------+                 |
-|  | Fraud Prob: 94%  |  | XGB Decision:    |  | Isolation Forest:|                 |
-|  | [============  ] |  | Fraudulent       |  | Anomaly (-1)     |                 |
-|  +------------------+  +------------------+  +------------------+                 |
-+-----------------------------------------------------------------------------------+
-```
+[![Financial Sentinel Dashboard](docs/dashboard.png)](https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app)
 
 ### Environment Configuration
 
