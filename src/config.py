@@ -26,6 +26,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app",
+        "https://financial-sentinel-16z7.onrender.com",
     ]
     
     model_config = SettingsConfigDict(case_sensitive=True)

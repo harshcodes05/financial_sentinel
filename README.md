@@ -3,6 +3,8 @@
 
 Financial Sentinel combines a supervised **XGBoost classifier** with an unsupervised **Isolation Forest anomaly detector**, exposing the inference pipeline through a **FastAPI REST API** and an interactive **Streamlit dashboard**.
 
+---
+
 ## Key Results
 
 - **84.00% fraud recall**, compared with 72.45% for the Random Forest baseline
@@ -22,38 +24,53 @@ The project focuses on the complete ML-to-application workflow:
 
 ---
 
+## Live Deployment
+
+The system is deployed and publicly accessible in a cloud-hosted environment:
+
+| Service | Environment | Access URL | Status / Docs |
+| :--- | :--- | :--- | :--- |
+| **Streamlit Dashboard** | Streamlit Community Cloud | [https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app/](https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app/) | Interactive UI |
+| **Backend REST API** | Render Cloud Platform | `https://financial-sentinel-16z7.onrender.com` | [Swagger Docs](https://financial-sentinel-16z7.onrender.com/docs) |
+| **API Base Path (v1)** | Render Cloud Platform | `https://financial-sentinel-16z7.onrender.com/api/v1` | REST Endpoint Base |
+
+> [!NOTE]
+> The backend API hosted on Render may experience a cold start latency of 30-50 seconds on initial connection if dormant due to free-tier spin-down. Subsequent requests execute at full speed.
+
+---
+
 ## System Architecture
 
 ```text
-                         User
-                          │
-                          ▼
-                ┌───────────────────┐
-                │   Streamlit UI    │
-                │      :8501        │
-                └─────────┬─────────┘
-                          │ HTTP REST
-                          ▼
-                ┌───────────────────┐
-                │   FastAPI API     │
-                │      :8000        │
-                │    (Dockerized)   │
-                └─────────┬─────────┘
-                          │
-                 ┌────────┴────────┐
-                 │                 │
-                 ▼                 ▼
-          ┌──────────────┐  ┌───────────────┐
-          │   XGBoost    │  │ Isolation     │
-          │ Classifier   │  │ Forest        │
-          └──────┬───────┘  └───────┬───────┘
-                 │                  │
-                 └────────┬─────────┘
-                          ▼
-                Risk Aggregation Engine
-                          │
-                          ▼
-                    JSON Response
+                           User / Client Browser
+                                     │
+                                     ▼
+                      ┌─────────────────────────────┐
+                      │    Streamlit Cloud UI       │
+                      │   financialsentinel.app     │
+                      └──────────────┬──────────────┘
+                                     │ HTTPS REST API
+                                     ▼
+                      ┌─────────────────────────────┐
+                      │    FastAPI API (Render)     │
+                      │ financial-sentinel-16z7.app │
+                      │        (Dockerized)         │
+                      └──────────────┬──────────────┘
+                                     │
+                       ┌─────────────┴─────────────┐
+                       │                           │
+                       ▼                           ▼
+            ┌────────────────────┐      ┌────────────────────┐
+            │ XGBoost Classifier │      │  Isolation Forest  │
+            │   (Supervised)     │      │   (Unsupervised)   │
+            └──────────┬─────────┘      └──────────┬─────────┘
+                       │                           │
+                       └─────────────┬─────────────┘
+                                     ▼
+                          Risk Aggregation Engine
+                                     │
+                                     ▼
+                               JSON Response
 ```
 
 ---
@@ -74,6 +91,7 @@ The project focuses on the complete ML-to-application workflow:
 | **Testing** | Pytest + FastAPI TestClient |
 | **Model Serialization** | Joblib |
 | **Containerization** | Docker + Docker Compose |
+| **Cloud Hosting** | Render (API) + Streamlit Community Cloud (UI) |
 | **Language** | Python 3.11 / 3.13 |
 
 ---
@@ -128,7 +146,7 @@ financial_sentinel/
 
 Financial Sentinel uses two complementary models:
 
-1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate fraud probability $P(\mathrm{Fraud} \mid X)$. Predictions are converted to binary fraud decisions using the optimized threshold $\theta^\*$ stored in `models/v2/metadata.json`.
+1. **Supervised XGBoost Classifier:** Learns from labeled historical transactions to estimate fraud probability $P(\mathrm{Fraud} \mid X)$. Predictions are converted to binary fraud decisions using the optimized threshold $\theta^*$ stored in `models/v2/metadata.json`.
 
 2. **Unsupervised Isolation Forest:** Trained exclusively on legitimate transactions ($y = 0$) to establish a baseline of normal transaction behavior. It flags structural feature outliers using a $0.5\%$ contamination setting selected during training.
 
@@ -136,8 +154,11 @@ Financial Sentinel uses two complementary models:
 
 Credit card fraud datasets are heavily skewed. Rather than generating synthetic samples using SMOTE, the active XGBoost model uses cost weighting:
 
-`scale_pos_weight` $= \dfrac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}} \approx 577.88$
+$$\mathrm{scale\_pos\_weight} = \frac{N_{\mathrm{legit}}}{N_{\mathrm{fraud}}} \approx 577.88$$
+
 This assigns substantially greater training weight to fraudulent examples, increasing their contribution to XGBoost's gradient and helping the classifier focus on the minority class without synthetically altering the training distribution.
+
+---
 
 ## Dataset
 
@@ -151,15 +172,11 @@ The dataset contains 284,807 transactions, of which 492 are fraudulent.
 
 The default $0.50$ decision threshold is not necessarily optimal for a highly imbalanced fraud detection problem. Because fraud detection prioritizes recall when missed fraud carries greater operational impact than false alerts, the project optimizes the $F_2$ metric:
 
-$$
-F_2 = 5 \cdot \frac{\mathrm{Precision} \times \mathrm{Recall}}{4 \cdot \mathrm{Precision} + \mathrm{Recall}}
-$$
+$$F_2 = 5 \cdot \frac{\mathrm{Precision} \times \mathrm{Recall}}{4 \cdot \mathrm{Precision} + \mathrm{Recall}}$$
 
 Selecting the threshold that maximizes $F_2$ on the validation set yields:
 
-$$
-\theta^* = 0.8854
-$$
+$$\theta^* = 0.8854$$
 
 The threshold is stored in `models/v2/metadata.json` and loaded dynamically during inference.
 
@@ -196,7 +213,7 @@ The inference service combines supervised and unsupervised model outputs:
 
 The API exposes `prediction_confidence`, intentionally documented as **uncalibrated**:
 
-`prediction_confidence` $= \max(p, 1-p)$
+$$\mathrm{prediction\_confidence} = \max(p, 1-p)$$
 
 where $p$ is the raw XGBoost fraud probability. It represents the model's absolute distance from the $50/50$ decision boundary rather than a Platt-scaled or isotonic-calibrated probability of correctness.
 
@@ -216,7 +233,10 @@ Measured using `python -m scripts.benchmark_latency` across 500 single-request r
 
 ## REST API Endpoints
 
-Base URL: `http://127.0.0.1:8000/api/v1`
+### Base URLs
+
+- **Local Base URL:** `http://127.0.0.1:8000/api/v1`
+- **Deployed Base URL:** `https://financial-sentinel-16z7.onrender.com/api/v1`
 
 ### Endpoints Overview
 
@@ -264,10 +284,47 @@ The Streamlit UI frontend (`apps/streamlit_app.py`) provides two interactive wor
 1. **Single Transaction Inspector:** Profile presets (Legitimate, Medium Risk, High Risk Fraud), manual slider inputs, risk level badges, uncalibrated certainty metrics, and latency measurement.
 2. **Batch CSV Inspector:** CSV upload, batch inference via `/predict-batch`, aggregated fraud risk summaries, and downloadable report tables.
 
-Configure the target API backend via environment variable:
+### Dashboard Preview
+
+```text
++-----------------------------------------------------------------------------------+
+| 🛡️ Financial Sentinel  |  Credit Card Fraud Detection & Risk Analysis Platform     |
++-----------------------------------------------------------------------------------+
+| System Status: 🟢 API Online (32.8 ms) | Model: XGBoost + Isolation Forest        |
++-----------------------------------------------------------------------------------+
+| [ ⚡ Single Transaction Inspector ]   [ 📁 Batch CSV Fraud Inspector ]            |
+|                                                                                   |
+|  Presets: [🟢 Normal Purchase]  [🟡 Anomaly Alert]  [🚨 High Risk Fraud]           |
+|                                                                                   |
+|  Time Elapsed: 4462.0 s                   Transaction Amount: €239.93             |
+|  PCA Features: V1 .. V28 (Adjustable Sliders / Number Inputs)                      |
+|                                                                                   |
+|  [ 🚀 Analyze Transaction Risk ]                                                  |
+|                                                                                   |
+|  -------------------------------------------------------------------------------  |
+|  🚨 CONFIRMED FRAUD DETECTED — Flag: CONFIRMED_FRAUD | Risk: HIGH                 |
+|                                                                                   |
+|  +------------------+  +------------------+  +------------------+                 |
+|  | Fraud Prob: 94%  |  | XGB Decision:    |  | Isolation Forest:|                 |
+|  | [============  ] |  | Fraudulent       |  | Anomaly (-1)     |                 |
+|  +------------------+  +------------------+  +------------------+                 |
++-----------------------------------------------------------------------------------+
+```
+
+### Environment Configuration
+
+Configure the target API backend via the `FINANCIAL_SENTINEL_API_URL` environment variable:
+
+#### Local Development Configuration
 ```bash
 export FINANCIAL_SENTINEL_API_URL="http://127.0.0.1:8000/api/v1"
 streamlit run apps/streamlit_app.py
+```
+
+#### Deployed Cloud Configuration
+In Streamlit Community Cloud App Settings (or `.streamlit/secrets.toml`):
+```toml
+FINANCIAL_SENTINEL_API_URL = "https://financial-sentinel-16z7.onrender.com/api/v1"
 ```
 
 ---
@@ -275,7 +332,7 @@ streamlit run apps/streamlit_app.py
 ## Security & Resilience
 
 - **Strict Schema Bounds:** Pydantic v2 enforces non-negative constraints (`Time >= 0`, `Amount >= 0`) and exact array dimensions (28 PCA features).
-- **Restricted CORS Policy:** Whitelists allowed origin domains (`localhost:8501`, `127.0.0.1:8501`, `localhost:8000`, `127.0.0.1:8000`) and allowed HTTP methods (`GET`, `POST`, `OPTIONS`).
+- **Restricted CORS Policy:** Whitelists allowed origin domains, including local hosts (`localhost:8501`, `127.0.0.1:8501`, `localhost:8000`, `127.0.0.1:8000`) and deployed origins (`https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app`, `https://financial-sentinel-16z7.onrender.com`), enforcing allowed HTTP methods (`GET`, `POST`, `OPTIONS`).
 - **Sanitized Error Responses:** Logs internal stack traces (`exc_info=True`) while returning clean, generic error messages to API clients.
 - **Model Readiness Check:** API readiness probe confirms model artifacts are loaded prior to processing inference traffic.
 
@@ -323,6 +380,23 @@ docker-compose up --build -d
 docker ps
 ```
 The Docker container runs Uvicorn without development auto-reloading (`uvicorn src.api.main:app --host 0.0.0.0 --port 8000`), matching the intended deployment configuration.
+
+---
+
+## Hosted Deployment
+
+The production deployment consists of two decoupled cloud services:
+
+1. **FastAPI Backend Service (Render)**
+   - Deployed as a web service using the containerized Dockerfile (`Dockerfile.api`).
+   - Automatically builds and deploys on push to the `main` branch.
+   - Live Base URL: `https://financial-sentinel-16z7.onrender.com/api/v1`
+   - Live Swagger Docs: `https://financial-sentinel-16z7.onrender.com/docs`
+
+2. **Streamlit UI Dashboard (Streamlit Community Cloud)**
+   - Connected to the GitHub repository pointing to `apps/streamlit_app.py`.
+   - Environment variable `FINANCIAL_SENTINEL_API_URL` configured in application settings pointing to `https://financial-sentinel-16z7.onrender.com/api/v1`.
+   - Live URL: [https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app/](https://financialsentinel-5tymssrqdd8rb65bdydg6e.streamlit.app/)
 
 ---
 
